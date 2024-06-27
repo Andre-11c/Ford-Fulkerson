@@ -16,6 +16,8 @@ const graphData = {
 //config para visualizacion 
 const width = 800;
 const height = 600;
+// Crear el contenedor SVG
+const svg = createSVGContainer('#graph-container', width, height)
 
 // Definir la simulación de fuerzas para el layout del grafo
 const simulation = d3.forceSimulation()
@@ -29,3 +31,4 @@ const links = svg.selectAll('line')
     .enter().append('line')
     .attr('stroke', '#000')
     .attr('stroke-width', 2);
+
