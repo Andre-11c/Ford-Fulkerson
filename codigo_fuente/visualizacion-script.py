@@ -2,6 +2,7 @@ import json
 import networkx as nx
 import matplotlib.pyplot as plt
 import matplotlib.animation as animation
+import matplotlib.image as mpimg
 
 # Función para cargar el grafo desde un archivo JSON
 def cargar_grafo_desde_json(file_path):
@@ -40,7 +41,9 @@ etiquetas_aristas = nx.get_edge_attributes(G, 'weight')
 def init():
     """Inicializar la animación con un grafo vacío."""
     ax.clear()
-    nx.draw(G, pos, ax=ax, with_labels=True, node_color='skyblue', node_size=2000, font_size=16, font_weight='bold', edge_color='gray', alpha=0)
+    ax.set_facecolor('black')
+
+    nx.draw(G, pos, ax=ax, with_labels=True, node_color='blue', node_size=2000, font_size=16, font_weight='bold', edge_color='green', alpha=0)
     return ax,
 
 def update(frame):
@@ -57,23 +60,26 @@ def update(frame):
         aristas_a_mostrar = [edge for i, edge in enumerate(G.edges) if i < frame - num_nodos + 1]
     
     # Dibujar nodos
-    nx.draw_networkx_nodes(G, pos, nodelist=nodos_a_mostrar, node_color='skyblue', node_size=2000, ax=ax)
+    nx.draw_networkx_nodes(G, pos, nodelist=nodos_a_mostrar, node_color='blue', node_size=2000, ax=ax)
     
     # Dibujar aristas
-    nx.draw_networkx_edges(G, pos, edgelist=aristas_a_mostrar, edge_color='gray', ax=ax)
+    nx.draw_networkx_edges(G, pos, edgelist=aristas_a_mostrar, edge_color='green', ax=ax)
     
     # Dibujar etiquetas de los nodos
     nx.draw_networkx_labels(G, pos, ax=ax, font_size=16, font_weight='bold')
     
     # Dibujar etiquetas de las aristas
     edge_labels = {edge: etiquetas_aristas[edge] for edge in aristas_a_mostrar}
-    nx.draw_networkx_edge_labels(G, pos, edge_labels=edge_labels, font_color='red', font_size=12, ax=ax)
+    nx.draw_networkx_edge_labels(G, pos, edge_labels=edge_labels, font_color='black', font_size=12, ax=ax)
     
     return ax,
 
 # Crear la animación
-ani = animation.FuncAnimation(fig, update, frames=len(G.nodes) + len(G.edges), init_func=init, blit=False, interval=1000, repeat=False)
+ani = animation.FuncAnimation(fig, update, frames=len(G.nodes) + len(G.edges), init_func=init, blit=False, interval=1000, repeat=True)
+
+
 
 # Mostrar la animación
-plt.title('Animación de Grafo Dirigido con Pesos')
+plt.title('Animación del sistema de tuberia ')
 plt.show()
+
