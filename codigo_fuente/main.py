@@ -51,10 +51,10 @@ def update(frame):
     
     if frame < num_nodos:
         nodos_a_mostrar = list(G.nodes)[:frame+1]
-        aristas_a_mostrar = [edge for i, edge in enumerate(G.edges(data=True)) if i < frame]
+        aristas_a_mostrar = [edge for i, edge in enumerate(G.edges) if i < frame]
     else:
         nodos_a_mostrar = list(G.nodes)
-        aristas_a_mostrar = [edge for i, edge in enumerate(G.edges(data=True)) if i < frame - num_nodos + 1]
+        aristas_a_mostrar = [edge for i, edge in enumerate(G.edges) if i < frame - num_nodos + 1]
     
     # Dibujar nodos
     nx.draw_networkx_nodes(G, pos, nodelist=nodos_a_mostrar, node_color='skyblue', node_size=2000, ax=ax)
@@ -66,7 +66,7 @@ def update(frame):
     nx.draw_networkx_labels(G, pos, ax=ax, font_size=16, font_weight='bold')
     
     # Dibujar etiquetas de las aristas
-    edge_labels = {edge: etiquetas_aristas[edge[:2]] for edge in aristas_a_mostrar}
+    edge_labels = {edge: etiquetas_aristas[edge] for edge in aristas_a_mostrar}
     nx.draw_networkx_edge_labels(G, pos, edge_labels=edge_labels, font_color='red', font_size=12, ax=ax)
     
     return ax,
