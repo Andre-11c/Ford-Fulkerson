@@ -1,83 +1,67 @@
-import numpy as np
-import math
+import json
+import networkx as nx
 
-with open('Dataset.json') as file:
-    G = []
-    for line in file:
-        if line.startswith('-'):
-            G.append([])
-            continue
-        nums = list(map(int, line.split()))
-        G.append([(nums[i], nums[i+1]) for i in range(0, len(nums), 2)])
+def load_graph_from_json(file_path):
+    with open(file_path, 'r') as f:
+        data = json.load(f)
+    return data
 
-n = len(G)
-G1 = np.full((n, n), np.nan)
+def create_graph(data):
+    G = nx.DiGraph()
+    for node in data["nodes"]:
+        G.add_node(node["id"])
+    for edge in data["edges"]:
+        G.add_edge(edge["source"], edge["target"], capacity=edge["weight"])
+    return G
 
-for u in range(n):
-    for v, w in G[u]:
-        G1[u, v] = w
+def ford_fulkerson_max_flow(G, source, target):
+    flow_value, flow_dict = nx.maximum_flow(G, source, target)
+    return flow_value, flow_dict
 
-def findAugmentingPath(G, s, t):
-    n = len(G)
-    visited = [False]*n
-    augPath = []
+def save_max_flow_and_redundant_pipes_to_json(data, flow_dict, max_flow_output_path, redundant_output_path):
+    nodes = data["nodes"]
+    max_flow_edges = []
+    all_edges = {(edge["source"], edge["target"]): edge for edge in data["edges"]}
+    redundant_edges = []
 
-    def dfs(u, bottleNeck):
-        visited[u] = True
-        augPath.append(u)
-        if u == t:
-            return bottleNeck
-        for v in range(n):
-            if G[u, v] > 0 and not visited[v]:
-                bn2 = dfs(v, bottleNeck if bottleNeck <= G[u, v] else G[u, v])
-                if visited[t]:
-                    return bn2
-        augPath.pop()
+    for u in flow_dict:
+        for v in flow_dict[u]:
+            if flow_dict[u][v] > 0:  # Only include edges with flow > 0
+                max_flow_edges.append({"source": u, "target": v, "weight": flow_dict[u][v]})
+                if (u, v) in all_edges:
+                    del all_edges[(u, v)]
 
-    bottleNeck = dfs(s, math.inf)
+    redundant_edges = [{"source": u, "target": v, "weight": all_edges[(u, v)]["weight"]} for u, v in all_edges]
 
-    return augPath, bottleNeck
+    max_flow_result = {
+        "nodes": nodes,
+        "edges": max_flow_edges
+    }
+    
+    redundant_result = {
+        "nodes": nodes,
+        "edges": redundant_edges,
+        "title": "Tuberías a retirar"
+    }
+    
+    with open(max_flow_output_path, 'w') as f:
+        json.dump(max_flow_result, f, indent=4)
+        
+    with open(redundant_output_path, 'w') as f:
+        json.dump(redundant_result, f, indent=4)
 
-findAugmentingPath(G1, 0, 5)
+def main(input_file, max_flow_output_file, redundant_output_file, source, target):
+    data = load_graph_from_json(input_file)
+    G = create_graph(data)
+    flow_value, flow_dict = ford_fulkerson_max_flow(G, source, target)
+    save_max_flow_and_redundant_pipes_to_json(data, flow_dict, max_flow_output_file, redundant_output_file)
+    print(f"Max flow value: {flow_value}")
 
-def fordFulkerson(G, s, t):
-    n = len(G)
-    Gres = G.copy()
-    for i in range(n):
-        for j in range(n):
-            if not np.isnan(Gres[i, j]) and np.isnan(Gres[j, i]):
-                Gres[j, i] = 0
-    Gflow = np.zeros((n, n))
+if __name__ == "__main__":
+    input_file = '/home/andre/Documents/TF_CHIPANA_DELASCASAS/dataset/dataset.json'  # Archivo JSON de entrada
+    max_flow_output_file = 'max_flow_output.json'  # Archivo JSON de salida para el flujo máximo
+    redundant_output_file = 'redundant_output.json'  # Archivo JSON de salida para las tuberías a retirar
+    source = 0  # Nodo fuente
+    target = 3  # Nodo sumidero
 
-    maxFlow = 0
-    augmentingPath, bottleNeck = findAugmentingPath(Gres, s, t)
-    while augmentingPath:
-        for i in range(len(augmentingPath) - 1):
-            u = augmentingPath[i]
-            v = augmentingPath[i+1]
-            Gres[u, v] -= bottleNeck
-            Gres[v, u] += bottleNeck
-            Gflow[u, v] += bottleNeck
-        maxFlow += bottleNeck
-        augmentingPath, bottleNeck = findAugmentingPath(Gres, s, t)
-
-    return maxFlow, Gflow
-
-maxFlow, G2 = fordFulkerson(G1, 0, 5)
-print(maxFlow)
-n = len(G2)
-G3 = [[] for _ in range(n)]
-for i in range(n):
-    for j in range(n):
-        if G2[i, j] > 0 and G2[i, j] != G2[j, i]:
-            G3[i].append((j, G2[i, j]))
-
-print(G3)
-
-
-with open('FinalGraph.txt', 'w') as file:
-    for row in G3:
-        file.write(str(row) + '\n')
-
-with open('FinalGraph.txt', 'r') as file:
-    print(file.read())
+    main(input_file, max_flow_output_file, redundant_output_file, source, target)

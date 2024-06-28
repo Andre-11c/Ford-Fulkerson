@@ -1,86 +1,93 @@
 import json
 import networkx as nx
-import matplotlib.pyplot as plt
-import matplotlib.animation as animation
-import matplotlib.image as mpimg
+import tkinter as tk
+from tkinter import filedialog, messagebox
 
-# Función para cargar el grafo desde un archivo JSON
-def cargar_grafo_desde_json(file_path):
-    with open(file_path, 'r') as file:
-        data = json.load(file)
-        
+def load_graph_from_json(file_path):
+    with open(file_path, 'r') as f:
+        data = json.load(f)
+    return data
+
+def create_graph(data):
     G = nx.DiGraph()
-    
-    # Agregar nodos
-    for node in data['nodes']:
-        G.add_node(node['id'])
-    
-    # Agregar aristas con pesos
-    for edge in data['edges']:
-        G.add_edge(edge['source'], edge['target'], weight=edge['weight'])
-    
+    for node in data["nodes"]:
+        G.add_node(node["id"])
+    for edge in data["edges"]:
+        G.add_edge(edge["source"], edge["target"], capacity=edge["weight"])
     return G
 
-# Ruta del archivo JSON
-file_path = '/home/andre/Documents/TF_CHIPANA_DELASCASAS/grafo.json'
+def ford_fulkerson_max_flow(G, source, target):
+    flow_value, flow_dict = nx.maximum_flow(G, source, target)
+    return flow_value, flow_dict
 
-# Cargar el grafo
-G = cargar_grafo_desde_json(file_path)
-
-# Posiciones de los nodos para el gráfico
-pos = nx.spring_layout(G)
-
-# Crear la figura y los ejes
-fig, ax = plt.subplots(figsize=(8, 6))
-
-# Inicializar listas para nodos y aristas
-nodos_dibujados = []
-aristas_dibujadas = []
-etiquetas_aristas = nx.get_edge_attributes(G, 'weight')
-
-def init():
-    """Inicializar la animación con un grafo vacío."""
-    ax.clear()
-    ax.set_facecolor('black')
-
-    nx.draw(G, pos, ax=ax, with_labels=True, node_color='blue', node_size=2000, font_size=16, font_weight='bold', edge_color='green', alpha=0)
-    return ax,
-
-def update(frame):
-    """Actualizar la animación agregando nodos y aristas secuencialmente."""
-    ax.clear()
-    plt.title('Animación del sistema de tuberia ')
-    num_nodos = len(G.nodes)
-    num_aristas = len(G.edges)
+def save_max_flow_to_json(data, flow_dict, output_path):
+    nodes = data["nodes"]
+    edges = []
+    for u in flow_dict:
+        for v in flow_dict[u]:
+            if flow_dict[u][v] > 0:  # Only include edges with flow > 0
+                edges.append({"source": u, "target": v, "weight": flow_dict[u][v]})
     
-    if frame < num_nodos:
-        nodos_a_mostrar = list(G.nodes)[:frame+1]
-        aristas_a_mostrar = [edge for i, edge in enumerate(G.edges) if i < frame]
-    else:
-        nodos_a_mostrar = list(G.nodes)
-        aristas_a_mostrar = [edge for i, edge in enumerate(G.edges) if i < frame - num_nodos + 1]
+    result = {
+        "nodes": nodes,
+        "edges": edges
+    }
     
-    # Dibujar nodos
-    nx.draw_networkx_nodes(G, pos, nodelist=nodos_a_mostrar, node_color='blue', node_size=2000, ax=ax)
-    
-    # Dibujar aristas
-    nx.draw_networkx_edges(G, pos, edgelist=aristas_a_mostrar, edge_color='green', ax=ax)
-    
-    # Dibujar etiquetas de los nodos
-    nx.draw_networkx_labels(G, pos, ax=ax, font_size=16, font_weight='bold')
-    
-    # Dibujar etiquetas de las aristas
-    edge_labels = {edge: etiquetas_aristas[edge] for edge in aristas_a_mostrar}
-    nx.draw_networkx_edge_labels(G, pos, edge_labels=edge_labels, font_color='black', font_size=12, ax=ax)
-    
-    return ax,
+    with open(output_path, 'w') as f:
+        json.dump(result, f, indent=4)
 
-# Crear la animación
-ani = animation.FuncAnimation(fig, update, frames=len(G.nodes) + len(G.edges), init_func=init, blit=False, interval=1000, repeat=True)
+def main(input_file, output_file, source, target):
+    data = load_graph_from_json(input_file)
+    G = create_graph(data)
+    flow_value, flow_dict = ford_fulkerson_max_flow(G, source, target)
+    save_max_flow_to_json(data, flow_dict, output_file)
+    messagebox.showinfo("Resultado", f"Valor máximo del flujo: {flow_value}")
 
+def open_file_dialog():
+    file_path = filedialog.askopenfilename()
+    entry_input_file.delete(0, tk.END)
+    entry_input_file.insert(0, file_path)
 
+def save_file_dialog():
+    file_path = filedialog.asksaveasfilename(defaultextension=".json", filetypes=[("JSON files", "*.json")])
+    entry_output_file.delete(0, tk.END)
+    entry_output_file.insert(0, file_path)
 
-# Mostrar la animación
-plt.title('Animación del sistema de tuberia ')
-plt.show()
+def run_algorithm():
+    input_file = entry_input_file.get()
+    output_file = entry_output_file.get()
+    source = int(entry_source.get())
+    target = int(entry_target.get())
+    main(input_file, output_file, source, target)
 
+# Crear la ventana principal
+root = tk.Tk()
+root.title("Flujo Máximo - Ford-Fulkerson")
+
+# Etiquetas y entradas para los archivos y nodos
+tk.Label(root, text="Archivo JSON de entrada:").grid(row=0, column=0, padx=10, pady=10)
+entry_input_file = tk.Entry(root, width=50)
+entry_input_file.grid(row=0, column=1, padx=10, pady=10)
+btn_browse_input = tk.Button(root, text="Examinar...", command=open_file_dialog)
+btn_browse_input.grid(row=0, column=2, padx=10, pady=10)
+
+tk.Label(root, text="Archivo JSON de salida:").grid(row=1, column=0, padx=10, pady=10)
+entry_output_file = tk.Entry(root, width=50)
+entry_output_file.grid(row=1, column=1, padx=10, pady=10)
+btn_save_output = tk.Button(root, text="Guardar como...", command=save_file_dialog)
+btn_save_output.grid(row=1, column=2, padx=10, pady=10)
+
+tk.Label(root, text="Nodo fuente:").grid(row=2, column=0, padx=10, pady=10)
+entry_source = tk.Entry(root)
+entry_source.grid(row=2, column=1, padx=10, pady=10)
+
+tk.Label(root, text="Nodo sumidero:").grid(row=3, column=0, padx=10, pady=10)
+entry_target = tk.Entry(root)
+entry_target.grid(row=3, column=1, padx=10, pady=10)
+
+# Botón para ejecutar el algoritmo
+btn_run = tk.Button(root, text="Ejecutar", command=run_algorithm)
+btn_run.grid(row=4, column=1, padx=10, pady=20)
+
+# Iniciar el bucle de la interfaz gráfica
+root.mainloop()
