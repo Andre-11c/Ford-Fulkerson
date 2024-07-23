@@ -5,10 +5,11 @@ Flujo ejecución:
 
 Imagenes referenciales: 
 
-
-![image](https://github.com/user-attachments/assets/dba5ac87-65d3-4c29-affd-68fdcf3d70ff)
 *fordfulkerson.py*
+![image](https://github.com/user-attachments/assets/ea63565a-2119-4081-8814-79dc50355152)
 
-![screen-recorder-mon-jul-22-2024-18-57-28](https://github.com/user-attachments/assets/b54814a0-9b82-40ae-9dd3-a10ed54c76b0)
+
 *visualizacion.py*
+![screen-recorder-mon-jul-22-2024-18-57-28](https://github.com/user-attachments/assets/b54814a0-9b82-40ae-9dd3-a10ed54c76b0)
+
 
